@@ -40,7 +40,7 @@ app.get('/', function(req, res) {
 
         const pagination = $('.pager');
 
-        if (pagination) {
+        if (pagination.length > 0) {
           const lastUrl = $(pagination).children().last().children().first().attr('href');
           const pageQueryString = '?page=';
           const pageQueryStringIndex = lastUrl.indexOf(pageQueryString);
@@ -93,6 +93,8 @@ app.get('/', function(req, res) {
           $('.post').each(function (index, element) {
             postsOnPage.push(formatItem($, element));
           });
+
+          postsOnPage = postsOnPage.reverse();
 
           for (let i = 0; i < maxPosts; i++) {
             if (postsOnPage[i]) {
@@ -193,6 +195,6 @@ app.get('/all', function(req, res) {
 const port = process.env.hasOwnProperty('PORT') ? process.env.PORT : '5000';
 app.listen(port);
 
-console.log('Listining on port ' + port);
+console.log('Listening on port ' + port);
 
 exports = module.exports = app;
