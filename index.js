@@ -24,6 +24,7 @@ function formatItem ($, element) {
       + '\t\t\t\t<dc:creator>' + (author.length > 0 ? author : '0th Post') + '</dc:creator>\n'
       + '\t\t\t\t<pubDate>' + date + '</pubDate>\n'
       + '\t\t\t\t<description>' + escape(description) + '</description>\n'
+      + '\t\t\t\t<link>https://www.roleplayerguild.com' + link + '</link>\n'
       + '\t\t\t\t<guid>https://www.roleplayerguild.com' + link + '</guid>\n'
     + '\t\t\t</item>\n';
 }
