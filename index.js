@@ -182,7 +182,7 @@ app.get('/all', function(req, res) {
 
         const promises = [];
 
-        if (pagination) {
+        if (pagination.length > 0) {
           const lastUrl = $(pagination).children().last().children().first().attr('href');
           const pageQueryString = '?page=';
           const pageQueryStringIndex = lastUrl.indexOf(pageQueryString);
