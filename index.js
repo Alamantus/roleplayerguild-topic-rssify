@@ -6,16 +6,25 @@ const escape = require('escape-html');
 
 const app = express();
 
+const days = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'];
+const months = [
+  'January', 'February', 'March',
+  'April', 'May', 'June', 'July',
+  'August', 'September', 'October',
+  'November', 'December'
+];
+
 function formatItem ($, element) {
   const author = $(element).find('.user-uname').text();
-  const date = $(element).find('.ago').attr('title');
+  const d = new Date($(element).find('.ago').attr('title'));
+  const date = `${days[d.getUTCDay()]}, ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()} ${d.getUTCHours()}:${d.getUTCMinutes()}:${d.getUTCSeconds()} GMT`;
   const link = $(element).find('.post-permalink').attr('href');
   const description = $(element).find('.post-content').text();
   return '\t\t\t<item>\n'
-      + '\t\t\t\t<author>' + (author.length > 0 ? author : '0th Post') + '</author>\n'
-      + '\t\t\t\t<date>' + date + '</date>\n'
+      + '\t\t\t\t<dc:creator>' + (author.length > 0 ? author : '0th Post') + '</dc:creator>\n'
+      + '\t\t\t\t<pubDate>' + date + '</pubDate>\n'
       + '\t\t\t\t<description>' + escape(description) + '</description>\n'
-      + '\t\t\t\t<link>https://www.roleplayerguild.com' + link + '</link>\n'
+      + '\t\t\t\t<guid>https://www.roleplayerguild.com' + link + '</guid>\n'
     + '\t\t\t</item>\n';
 }
 
@@ -108,12 +117,11 @@ app.get('/', function(req, res) {
         Promise.all(promises).then(function() {
           res.set('Content-Type', 'text/xml');
           res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
-            + '\t<rss version="2.0">\n'
+            + '\t<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
               + '\t\t<channel>\n'
                 + '\t\t\t<title>' + escape(title) + '</title>\n'
                 + '\t\t\t<link>' + url + '</link>\n'
                 + '\t\t\t<description>The last ' + maxPosts + ' posts in ' + escape(title) + '</description>\n'
-                + '\t\t\t<total>' + items.length + '</total>\n'
                 + items.join('\n') + '\n'
               + '\t\t</channel>\n'
             + '\t</rss>\n');
@@ -178,7 +186,7 @@ app.get('/all', function(req, res) {
       Promise.all(promises).then(function() {
         res.set('Content-Type', 'text/xml');
         res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
-          + '\t<rss version="2.0">\n'
+          + '\t<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
             + '\t\t<channel>\n'
               + '\t\t\t<title>' + escape(title) + '</title>\n'
               + '\t\t\t<link>' + url + '</link>\n'
