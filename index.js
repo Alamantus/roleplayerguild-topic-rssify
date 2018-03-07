@@ -23,98 +23,102 @@ app.get('/', function(req, res) {
   const maxPosts = 10;
   const url = req.query['url'];
 
-  request(url, function(error, response, html) {
-    if (error) {
-      console.error(error);
-    } else {
-      const $ = cheerio.load(html);
+  if (!url) {
+    res.send('Enter the URL like this: https://roleplayerguild-topic-rssify.herokuapp.com/?url=[your roleplayerguild topic url]');
+  } else {
+    request(url, function(error, response, html) {
+      if (error) {
+        console.error(error);
+      } else {
+        const $ = cheerio.load(html);
 
-      const title = $('.topic-heading').first().text().trim();
+        const title = $('.topic-heading').first().text().trim();
 
-      let items = [];
+        let items = [];
 
-      const promises = [];
+        const promises = [];
 
-      const pagination = $('.pager');
+        const pagination = $('.pager');
 
-      if (pagination) {
-        const lastUrl = $(pagination).children().last().children().first().attr('href');
-        const pageQueryString = '?page=';
-        const pageQueryStringIndex = lastUrl.indexOf(pageQueryString);
-        const pages = lastUrl.substr(pageQueryStringIndex + pageQueryString.length);
+        if (pagination) {
+          const lastUrl = $(pagination).children().last().children().first().attr('href');
+          const pageQueryString = '?page=';
+          const pageQueryStringIndex = lastUrl.indexOf(pageQueryString);
+          const pages = lastUrl.substr(pageQueryStringIndex + pageQueryString.length);
 
-        if (pages && parseInt(pages) > 1) {
-          const numberOfPages = parseInt(pages);
+          if (pages && parseInt(pages) > 1) {
+            const numberOfPages = parseInt(pages);
 
-          const promise = new Promise(function(resolve, reject) {
-            let postsOnPage = [];
-            const pageUrl = url + '?page=' + pages;
-            request(pageUrl, function(err, r, resHtml) {
-              if (err) {
-                console.error(err);
-                reject();
-              } else {
-                const $page = cheerio.load(resHtml);
-                $page('.post').each(function (index, element) {
-                  postsOnPage.push(formatItem($page, element));
-                });
+            const promise = new Promise(function(resolve, reject) {
+              let postsOnPage = [];
+              const pageUrl = url + '?page=' + pages;
+              request(pageUrl, function(err, r, resHtml) {
+                if (err) {
+                  console.error(err);
+                  reject();
+                } else {
+                  const $page = cheerio.load(resHtml);
+                  $page('.post').each(function (index, element) {
+                    postsOnPage.push(formatItem($page, element));
+                  });
 
-                if (postsOnPage.length < maxPosts) {
-                  request(url + '?page=' + (numberOfPages - 1), function(err, r, resHtml) {
-                    const nextPage = [];
-                    $page('.post').each(function (index, element) {
-                      nextPage.push(formatItem($page, element));
+                  if (postsOnPage.length < maxPosts) {
+                    request(url + '?page=' + (numberOfPages - 1), function(err, r, resHtml) {
+                      const nextPage = [];
+                      $page('.post').each(function (index, element) {
+                        nextPage.push(formatItem($page, element));
+                      });
+                      postsOnPage = nextPage.concat(postsOnPage).reverse();
+
+                      for (let j = 0; j < maxPosts; j++) {
+                        items.push(postsOnPage[j]);
+                      }
+                      resolve();
                     });
-                    postsOnPage = nextPage.concat(postsOnPage).reverse();
-
+                  } else {
+                    postsOnPage = postsOnPage.reverse();
                     for (let j = 0; j < maxPosts; j++) {
                       items.push(postsOnPage[j]);
                     }
+
                     resolve();
-                  });
-                } else {
-                  postsOnPage = postsOnPage.reverse();
-                  for (let j = 0; j < maxPosts; j++) {
-                    items.push(postsOnPage[j]);
                   }
-
-                  resolve();
                 }
-              }
+              });
             });
-          });
-          promises.push(promise);
-        }
-      } else {
-        let postsOnPage = [];
-        $('.post').each(function (index, element) {
-          postsOnPage.push(formatItem($, element));
-        });
-
-        for (let i = 0; i < maxPosts; i++) {
-          if (postsOnPage[i]) {
-            items.push(postsOnPage[i]);
+            promises.push(promise);
           }
+        } else {
+          let postsOnPage = [];
+          $('.post').each(function (index, element) {
+            postsOnPage.push(formatItem($, element));
+          });
+
+          for (let i = 0; i < maxPosts; i++) {
+            if (postsOnPage[i]) {
+              items.push(postsOnPage[i]);
+            }
+          }
+
+          promises.push(Promise.resolve());
         }
 
-        promises.push(Promise.resolve());
+        Promise.all(promises).then(function() {
+          res.set('Content-Type', 'text/xml');
+          res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
+            + '\t<rss version="2.0">\n'
+              + '\t\t<channel>\n'
+                + '\t\t\t<title>' + escape(title) + '</title>\n'
+                + '\t\t\t<link>' + url + '</link>\n'
+                + '\t\t\t<description>The last ' + maxPosts + ' posts in ' + escape(title) + '</description>\n'
+                + '\t\t\t<total>' + items.length + '</total>\n'
+                + items.join('\n') + '\n'
+              + '\t\t</channel>\n'
+            + '\t</rss>\n');
+        });
       }
-
-      Promise.all(promises).then(function() {
-        res.set('Content-Type', 'text/xml');
-        res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
-          + '\t<rss version="2.0">\n'
-            + '\t\t<channel>\n'
-              + '\t\t\t<title>' + escape(title) + '</title>\n'
-              + '\t\t\t<link>' + url + '</link>\n'
-              + '\t\t\t<description>The last ' + maxPosts + ' posts in ' + escape(title) + '</description>\n'
-              + '\t\t\t<total>' + items.length + '</total>\n'
-              + items.join('\n') + '\n'
-            + '\t\t</channel>\n'
-          + '\t</rss>\n');
-      });
-    }
-  });
+    });
+  }
 });
 
 app.get('/all', function(req, res) {
@@ -186,8 +190,9 @@ app.get('/all', function(req, res) {
   });
 });
 
-app.listen('3014');
+const port = process.env.hasOwnProperty('PORT') ? process.env.PORT : '5000';
+app.listen(port);
 
-console.log('Listining on port 3014');
+console.log('Listining on port ' + port);
 
 exports = module.exports = app;
