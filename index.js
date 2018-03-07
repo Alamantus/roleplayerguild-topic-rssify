@@ -22,32 +22,67 @@ app.get('/', function(req, res) {
   const url = req.query['url'];
 
   request(url, function(error, response, html) {
-    console.log(req);
     if (error) {
       console.error(error);
     } else {
       const $ = cheerio.load(html);
 
-      const posts = $('.post');
-
       let items = '';
 
-      posts.each(function (index, element) {
-        items += formatItem($, element);
+      $('.post').each(function (index, element) {
+        items.push(formatItem($, element));
       });
 
-      const feed = '<?xml version="1.0" encoding="UTF-8" ?>\n'
-        + '\t<rss version="2.0">\n'
-          + '\t\t<channel>\n'
-            + '\t\t\t<title>OOC</title>\n'
-            + '\t\t\t<link>' + url + '</link>\n'
-            + '\t\t\t<description>The OOC posts</description>\n'
-            + items + '\n'
-          + '\t\t</channel>\n'
-        + '\t</rss>\n'
+      const pagination = $('.pager');
 
-      res.set('Content-Type', 'text/xml');
-      res.send(feed);
+      const promises = [];
+
+      if (pagination) {
+        const lastUrl = $(pagination).children().last().children().first().attr('href');
+        const pageQueryString = '?page=';
+        const pageQueryStringIndex = lastUrl.indexOf(pageQueryString);
+        const pages = lastUrl.substr(pageQueryStringIndex + pageQueryString.length);
+
+        if (pages && parseInt(pages) > 1) {
+          const numberOfPages = parseInt(pages);
+
+          for (let i = 2; i <= numberOfPages; i++) {
+            const promise = new Promise(function(resolve, reject) {
+              const pageUrl = url + '?page=' + i.toString();
+              request(pageUrl, function(err, r, resHtml) {
+                if (err) {
+                  console.error(err);
+                  reject();
+                } else {
+                  const $page = cheerio.load(resHtml);
+                  $page('.post').each(function (index, element) {
+                    items.push(formatItem($page, element));
+                  });
+
+                  resolve(pageUrl);
+                }
+              });
+            });
+            promises.push(promise);
+          }
+        }
+      } else {
+        promises.push(Promise.resolve());
+      }
+
+      Promise.all(promises).then(function(urls) {
+        console.log(urls);
+        res.set('Content-Type', 'text/xml');
+        res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
+          + '\t<rss version="2.0">\n'
+            + '\t\t<channel>\n'
+              + '\t\t\t<title>OOC</title>\n'
+              + '\t\t\t<link>' + url + '</link>\n'
+              + '\t\t\t<description>The OOC posts</description>\n'
+              + items.join('\n') + '\n'
+            + '\t\t</channel>\n'
+          + '\t</rss>\n');
+      });
     }
   });
 });
