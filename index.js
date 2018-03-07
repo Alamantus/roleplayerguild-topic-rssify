@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const request = require('request');
 const cheerio = require('cheerio');
+const escape = require('escape-html');
 
 const app = express();
 
@@ -13,7 +14,7 @@ function formatItem ($, element) {
   return '\t\t\t<item>\n'
       + '\t\t\t\t<author>' + (author.length > 0 ? author : '0th Post') + '</author>\n'
       + '\t\t\t\t<date>' + date + '</date>\n'
-      + '\t\t\t\t<description>' + description + '</description>\n'
+      + '\t\t\t\t<description>' + escape(description) + '</description>\n'
       + '\t\t\t\t<link>https://www.roleplayerguild.com' + link + '</link>\n'
     + '\t\t\t</item>\n';
 }
@@ -27,7 +28,7 @@ app.get('/', function(req, res) {
     } else {
       const $ = cheerio.load(html);
 
-      let items = '';
+      let items = [];
 
       $('.post').each(function (index, element) {
         items.push(formatItem($, element));
@@ -59,7 +60,7 @@ app.get('/', function(req, res) {
                     items.push(formatItem($page, element));
                   });
 
-                  resolve(pageUrl);
+                  resolve();
                 }
               });
             });
@@ -70,8 +71,7 @@ app.get('/', function(req, res) {
         promises.push(Promise.resolve());
       }
 
-      Promise.all(promises).then(function(urls) {
-        console.log(urls);
+      Promise.all(promises).then(function() {
         res.set('Content-Type', 'text/xml');
         res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
           + '\t<rss version="2.0">\n'
@@ -79,7 +79,7 @@ app.get('/', function(req, res) {
               + '\t\t\t<title>OOC</title>\n'
               + '\t\t\t<link>' + url + '</link>\n'
               + '\t\t\t<description>The OOC posts</description>\n'
-              + items.join('\n') + '\n'
+              + items.reverse().join('\n') + '\n'
             + '\t\t</channel>\n'
           + '\t</rss>\n');
       });

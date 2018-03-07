@@ -4,8 +4,12 @@
   "main": "index.js",
   "author": "Robbie Antenesse <dev@alamantus.com>",
   "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
+    "escape-html": "^1.0.3",
     "express": "^4.16.2",
     "request": "^2.83.0"
   }
