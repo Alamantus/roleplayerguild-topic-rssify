@@ -1,0 +1,12 @@
+{
+  "name": "posts-to-rss",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Robbie Antenesse <dev@alamantus.com>",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.2",
+    "request": "^2.83.0"
+  }
+}
