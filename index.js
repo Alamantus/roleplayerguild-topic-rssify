@@ -29,6 +29,8 @@ app.get('/', function(req, res) {
     } else {
       const $ = cheerio.load(html);
 
+      const title = $('.topic-heading').first().text().trim();
+
       let items = [];
 
       const promises = [];
@@ -103,9 +105,9 @@ app.get('/', function(req, res) {
         res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
           + '\t<rss version="2.0">\n'
             + '\t\t<channel>\n'
-              + '\t\t\t<title>OOC</title>\n'
+              + '\t\t\t<title>' + escape(title) + '</title>\n'
               + '\t\t\t<link>' + url + '</link>\n'
-              + '\t\t\t<description>The last ' + maxPosts + ' posts</description>\n'
+              + '\t\t\t<description>The last ' + maxPosts + ' posts in ' + escape(title) + '</description>\n'
               + '\t\t\t<total>' + items.length + '</total>\n'
               + items.join('\n') + '\n'
             + '\t\t</channel>\n'
@@ -172,9 +174,9 @@ app.get('/all', function(req, res) {
         res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
           + '\t<rss version="2.0">\n'
             + '\t\t<channel>\n'
-              + '\t\t\t<title>OOC</title>\n'
+              + '\t\t\t<title>' + escape(title) + '</title>\n'
               + '\t\t\t<link>' + url + '</link>\n'
-              + '\t\t\t<description>The OOC posts</description>\n'
+              + '\t\t\t<description>All posts in ' + escape(title) + '</description>\n'
               + '\t\t\t<total>' + items.length + '</total>\n'
               + items.reverse().join('\n') + '\n'
             + '\t\t</channel>\n'
