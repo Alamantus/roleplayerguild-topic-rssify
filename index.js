@@ -17,7 +17,7 @@ const months = [
 function formatItem ($, element) {
   const author = $(element).find('.user-uname').text();
   const d = new Date($(element).find('.ago').attr('title'));
-  const date = `${days[d.getUTCDay()]}, ${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()} ${d.getUTCHours()}:${d.getUTCMinutes()}:${d.getUTCSeconds()} GMT`;
+  const date = d.toUTCString();
   const link = $(element).find('.post-permalink').attr('href');
   const description = $(element).find('.post-content').text();
   return '\t\t\t<item>\n'
@@ -31,6 +31,7 @@ function formatItem ($, element) {
 app.get('/', function(req, res) {
   const maxPosts = 10;
   const url = req.query['url'];
+  const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
 
   if (!url) {
     res.send('Enter the URL like this: https://roleplayerguild-topic-rssify.herokuapp.com/?url=[your roleplayerguild topic url]');
@@ -119,6 +120,7 @@ app.get('/', function(req, res) {
           res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
             + '\t<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
               + '\t\t<channel>\n'
+                + '\t\t\t<atom:link href="' + fullUrl + '" rel="self" type="application/rss+xml" />\n'
                 + '\t\t\t<title>' + escape(title) + '</title>\n'
                 + '\t\t\t<link>' + url + '</link>\n'
                 + '\t\t\t<description>The last ' + maxPosts + ' posts in ' + escape(title) + '</description>\n'
@@ -188,6 +190,7 @@ app.get('/all', function(req, res) {
         res.send('<?xml version="1.0" encoding="UTF-8" ?>\n'
           + '\t<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
             + '\t\t<channel>\n'
+              + '\t\t\t<atom:link href="' + fullUrl + '" rel="self" type="application/rss+xml" />\n'
               + '\t\t\t<title>' + escape(title) + '</title>\n'
               + '\t\t\t<link>' + url + '</link>\n'
               + '\t\t\t<description>All posts in ' + escape(title) + '</description>\n'
